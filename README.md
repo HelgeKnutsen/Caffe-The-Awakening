@@ -1,2 +1,2 @@
-# Caffe-The-Awakening
+# Caffe-The-Awakenin
 First draft to Deep Learning with caffe
