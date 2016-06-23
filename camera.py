@@ -2,7 +2,6 @@ import pygame.camera
 import collections
 
 def startCamera():
-    # Start camera
     pygame.camera.init()
     pygame.camera.list_cameras()
     cam = pygame.camera.Camera("/dev/video0", (1920, 1080))
