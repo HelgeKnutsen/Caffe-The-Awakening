@@ -5,6 +5,7 @@ import caffe
 import sys
 import numpy as np
 
+### Setting up Caffe
 # The caffe module needs to be on the Python path:
 caffe_root = '/home/helge/caffe/'
 proj_root = '/home/helge/PycharmProjects/camera/'
@@ -46,6 +47,8 @@ net.blobs['data'].reshape(50,        # batch size
                           3,         # 3-channel (BGR) images
                           227, 227)  # image size is 227x227
 
+
+### Setting up Camera
 #Initialize image size on screen
 screen = pygame.display.set_mode((1920, 1080))
 
@@ -55,7 +58,7 @@ pygame.camera.list_cameras()
 cam = pygame.camera.Camera("/dev/video0", (1920, 1080))
 cam.start()
 
-n = 3
+n = 3 # number of pictures
 for x in range(0, n):
     #Take picture
     img = cam.get_image()
@@ -63,10 +66,15 @@ for x in range(0, n):
     #Show image on screen
     screen.blit(img,(0,0))
     pygame.display.flip()
-    image = pygame.surfarray.array_colorkey(img)
-    print type(image)
-    omage = caffe.io.load_image(proj_root + 'pygame0.bmp')  # import the image
-    print type(omage)
+
+    # Save image to file (comment out if you take many images), by default pygame only supports uncompressed .bmp files
+    # pygame.image.save(img, "pygame" + str(x) + ".bmp")
+
+    image = pygame.surfarray.array3d(img)
+
+    #image = caffe.io.load_image(proj_root + 'pygame' + str(x) + '.bmp')  # import the image
+    #print type(image)
+    # print "Image shape:", image.shape
     transformed_image = transformer.preprocess('data', image)  # transform the image
 
     net.blobs['data'].data[...] = transformed_image
@@ -77,12 +85,22 @@ for x in range(0, n):
     output_prob = output['prob'][0]  # the output probability vector for the first image in the batch
 
     print 'predicted class is:', output_prob.argmax()
-    #surface_to_array(image ,img, kind = 'P', opaque = 255, clear = 0)
 
-    #Save image to file (comment out if you take many images), by default pygame only supports uncompressed .bmp files
-    #pygame.image.save(img, "pygame" + str(x) + ".jpg")
+    labels_file = caffe_root + 'data/ilsvrc12/synset_words.txt'
 
-    time.sleep(3)
+    labels = np.loadtxt(labels_file, str, delimiter='\t')
+
+    print 'output label:', labels[output_prob.argmax()]
+
+    m = 5  # number of items
+    top_inds = output_prob.argsort()[::-1][:m]  # reverse sort and take five largest items
+
+    print 'probabilities and labels:'
+
+    for i in range(0, m):
+        print output_prob[top_inds[i]], labels[top_inds[i]]
+
+    time.sleep(1)
 
 #Stop the camera
 cam.stop()
