@@ -3,8 +3,9 @@ import time
 import collections
 
 from camera import startCamera, takePicture, dispPicture
+from caffe_functions import caffeSetup, classify, printClassPred
 
-caffe_init = caffeSetup()
+caffe_init = caffeSetup(0, 'ogn')
 labels, transformer, net = caffe_init
 
 cam = startCamera()
@@ -16,8 +17,9 @@ while (1):
 
     prob = classify(image.classify, transformer, net)
 
-    printClassPred(prob, labels)
+    n = 10
+    printClassPred(prob, labels, n)
 
-    time.sleep(0.01)
+    time.sleep(1)
 
 cam.stop()
