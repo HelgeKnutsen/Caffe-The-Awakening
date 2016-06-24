@@ -15,7 +15,7 @@ def takePicture(cam):
     im_s = cam.get_image()
 
     # Convert image to numpy array type
-    im_n = pygame.surfarray.array3d(im_s)
+    im_n = pygame.surfarray.array3d(im_s)/255.0
 
     # Create a tuple that returns both types. We need the surface type to display to screen and the numpy array type to classify with Caffe
     imageTypes = collections.namedtuple('imageTypes', ['disp', 'classify'])
