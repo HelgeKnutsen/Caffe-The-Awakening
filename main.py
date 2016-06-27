@@ -17,7 +17,7 @@ while (1):
 
     prob = classify(image.classify, transformer, net)
 
-    n = 10
+    n = 5
     printClassPred(prob, labels, n)
 
     time.sleep(1)
