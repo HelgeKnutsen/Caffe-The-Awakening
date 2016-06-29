@@ -90,7 +90,7 @@ def caffenet(data, label=None, train=True, num_classes=1000,
 def style_net(train=True, learn_all=False, subset=None): # Choose learn_all = True to train all layers, learn_all = False to only tune last layer
     if subset is None:
         subset = 'train' if train else 'test'
-    source = caffe_root + 'data/flickr_style/%s.txt' % subset
+    source = caffe_root + 'data/flickr_style/%s.txt' % subset # text-file with the image-paths (and label numbers)
     transform_param = dict(mirror=train, crop_size=227,
                            mean_file=caffe_root + 'data/ilsvrc12/imagenet_mean.binaryproto')
     style_data, style_label = L.ImageData(transform_param=transform_param, source=source,
@@ -189,16 +189,17 @@ def run_solvers(niter, solvers, disp_interval=10, tmp_save = True):
                                   for n, _ in solvers)
             print '%3d) %s' % (it, loss_disp)
     # Save the learned weights from both nets.
-    if tmp_save == True:
+    if tmp_save == True: # Temporary save weights
         weight_dir = tempfile.mkdtemp()
-    else:
-        weight_dir = caffe_root + savedWeights
+    else: # Permanently save weights
+        weight_dir = caffe_root + savedWeights # Directory
     weights = {}
     for name, s in solvers:
         filename = 'weights.%s.caffemodel' % name
         weights[name] = os.path.join(weight_dir, filename)
         s.net.save(weights[name])
     return loss, acc, weights
+
 
 def eval_style_net(weights, test_iters=10):
     test_net = caffe.Net(style_net(train=False), weights, caffe.TEST)
@@ -219,11 +220,11 @@ def loadLables(path):
         style_labels = style_labels[:NUM_STYLE_LABELS]
     return style_labels
 
-
+# Load weights
 def loadWeights(reset = True):
-    if reset == True:
+    if reset == True: # Reset weights to reference weights
         return caffe_root + 'models/bvlc_reference_caffenet/bvlc_reference_caffenet.caffemodel'
-    else:
+    else: # Load previously trained weights
         return caffe_root + savedWeights + 'weights.pretrained.caffemodel'
 
 # Initialize:
@@ -234,10 +235,11 @@ caffe_root = '/home/helge/caffe/'
 
 sys.path.insert(0, caffe_root + 'python')
 
-label_path = 'examples/finetune_flickr_style/style_names.txt'
+label_path = 'examples/finetune_flickr_style/style_names.txt' # file with labels
 
-savedWeights = 'savedWeights/'
-weights = loadWeights(reset = False)
+savedWeights = 'savedWeights/' # Make sure to create a folder in caffe_root where weights can be saved
+weights = loadWeights(reset = False) # Set reset = True to import weights from pretrained net with different classes,
+                                     # set reset = False to keep training the saved weights with current classes
 assert os.path.exists(weights)
 print weights
 
@@ -246,17 +248,21 @@ style_labels = loadLables(label_path)
 
 print '\nLoaded style labels:\n', ', '.join(style_labels)
 
-niter = 100 # number of iterations
+niter = 1000 # number of iterations
 
-style_solver_filename = solver(style_net(train=True)) # create tmp-file, return filename, add argument under style_net,
-                                                      # learn_all = True to train all layers, e.g. style_net(train = True, learn_all = True)
+style_solver_filename = solver(style_net(train=True, learn_all = True)) # create tmp-file, return filename,
+# add argument under style_net learn_all = True to train all layers, e.g. style_net(train = True, learn_all = True)
 style_solver = caffe.get_solver(style_solver_filename) # get solver
 style_solver.net.copy_from(weights) # Import weights in solver
 
 print 'Running solvers for %d iterations...' % niter
-solvers = [('pretrained', style_solver)]
-loss, acc, weights = run_solvers(niter, solvers, tmp_save = False)
+solvers = [('pretrained', style_solver)] # first variable yields name of file where trained weights are saved, e.g. 'pretrained' yields 'weights.pretrained.caffemodel'
+loss, acc, weights = run_solvers(niter, solvers, tmp_save = False) # Set tmp_save = True to save the weights temporarily (only during runtime of the program),
+                                                                   # set tmp_save = False to save weights permanently in given folder caffe_root + savedWeights
 print 'Done.'
 
-del style_solver, solvers # Save memory
+del style_solver, solvers # delete to save memory
 
+style_weights = weights['pretrained']
+test_net, accuracy = eval_style_net(style_weights)
+print 'Accuracy, trained from ImageNet initialization: %3.1f%%' % (100*accuracy, )
