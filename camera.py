@@ -10,7 +10,7 @@ resY = 1080
 def startCamera():
     pygame.camera.init()
     pygame.camera.list_cameras()
-    cam = pygame.camera.Camera("/dev/video1", (resX, resY))
+    cam = pygame.camera.Camera("/dev/video0", (resX, resY))
     cam.start()
     return cam
 
@@ -27,6 +27,9 @@ def takePicture(cam):
     imageTypes = collections.namedtuple('imageTypes', ['disp', 'classify'])
 
     image = imageTypes(im_s, im_n)
+
+    #plt.imshow(im_n, interpolation='nearest')
+    #plt.draw()
 
     return image
 
@@ -45,8 +48,6 @@ def dispPicture(im_s):
 
 def selSearch(im_n):
 
-    print im_n
-
     img_lbl, regions = selective_search(im_n, scale = 1000, sigma = 0.9, min_size = 3000)
 
     candidates = set()
@@ -58,9 +59,9 @@ def selSearch(im_n):
             continue
 
         # excluding regions smaller than 2000 pixels
-        # if r['size'] < 2000:
+        if r['size'] < 1000:
             #print 'Too small'
-            #continue
+            continue
 
         # distorted rects
         x, y, w, h = r['rect']
@@ -70,7 +71,7 @@ def selSearch(im_n):
         candidates.add(r['rect'])
 
     # draw rectangles on the original image
-    fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(12, 12))
+    fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(6, 6))
     ax.imshow(im_n)
     for x, y, w, h in candidates:
         print x, y, w, h
@@ -78,6 +79,7 @@ def selSearch(im_n):
             (x, y), w, h, fill=False, edgecolor='red', linewidth=1)
         ax.add_patch(rect)
 
+    plt.imshow(im_n, interpolation = 'nearest')
     plt.draw()
 
     return candidates

@@ -11,23 +11,18 @@ labels, transformer, net = caffe_init
 
 cam = startCamera()
 
+n = 10
 b = 1
 while (b == 1):
 
     tic = time.time()
 
     image = takePicture(cam)
-    #dispPicture(image.disp)
+    dispPicture(image.disp)
 
     print 'Searching..'
     candidates = selSearch(image.classify)
-    print candidates
-    elem = candidates.pop()
-    print elem
 
-    #cropped_im = image.classify.crop(elem)
-
-    #cropped_im.show()
 
     toc = time.time()
 
@@ -35,20 +30,40 @@ while (b == 1):
 
     tic = time.time()
 
-    print 'Classifying..'
+    print 'Whole image: '
     prob = classify(image.classify, transformer, net)
+    printClassPred(prob, labels, n)
+
+    f = plt.figure()
+
+    i = 0
+    for elem in candidates:
+    #for i in range (0, len(candidates)):
+
+        #elem = candidates.pop()
+
+        cropped_im = image.classify[elem[1]: elem[1] + elem[3], elem[0] : elem[0] + elem[2]]
+
+        f.add_subplot(4,4,i+1)
+        plt.imshow(cropped_im, interpolation='nearest')
+        plt.draw()
+
+        print 'Figure number', i+1
+        prob = classify(cropped_im, transformer, net)
+        printClassPred(prob, labels, n)
+        i = i + 1
+
+    #print 'Classifying..'
 
     toc = time.time()
 
-    print 'Classifying took ', toc - tic, 'sec'
+    #print 'Classifying took ', toc - tic, 'sec'
 
-    n = 10
-    printClassPred(prob, labels, n)
 
     b = 0
     #time.sleep(1)
 
 
-plt.show()
-
 cam.stop()
+
+plt.show()
