@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from selectivesearch import selective_search
 import os
 from scipy import misc
@@ -22,19 +24,24 @@ def sel_search(path, dirname, height):
 
     sideLength = int(alphaA * g)
 
-    bigArea = alphaB * g
-    smallArea = alphaC * g
+    bigArea = (alphaB * g)**2
+    smallArea = (alphaC * g)**2
 
     plt.ion()
 
     listing = os.listdir(path)
+    listing.sort()
 
     #file = listing[0]
     for file in listing:
 
         print file
 
-        imHQ = misc.imread(path + file)
+        try:
+            imHQ = misc.imread(path + file)
+        except IOError: #Dersom filen er en mappe
+            print("Fant mappe: " + file)
+            continue
 
         resize = 0.4
 
@@ -47,7 +54,7 @@ def sel_search(path, dirname, height):
         #img_lbl, regions = selective_search(imLowQ, scale = 50, sigma = 0.7, min_size = 50)
 
         candidates = set()
-
+        sentre = []
 
         for r in regions:
 
@@ -68,6 +75,23 @@ def sel_search(path, dirname, height):
             if w * h < 5000 or w * h > 0.9 * screenWidth * screenHeight:
                 # print 'Too small'
                 continue
+
+            # Ignorer kandidater som er for nærme en annen kandidat
+            minsteavstand = 0.1*sideLength
+            sentrum = (x + w/2.0, y + h/2.0)
+            forNaerme = False
+            for annenSentrum in sentre:
+                deltaX = abs(sentrum[0] - annenSentrum[0])
+                deltaY = abs(sentrum[1] - annenSentrum[1])
+                avstand = (deltaX**2 + deltaY**2)**0.5
+                if avstand < minsteavstand:
+                    forNaerme = True
+                    print("For nærme en annen kandidat.")
+                    break
+            if forNaerme:
+                continue
+            else:
+                sentre.append(sentrum)
 
             #print 'oldRect:', newRect
 
@@ -128,7 +152,10 @@ def sel_search(path, dirname, height):
 
             #print file
 
-            misc.imsave(path + dirname + '/' + file + str(i) + '.jpg', cropped_im)
+            try:
+                misc.imsave(path + dirname + '/' + file + "_" + str(i) + '.jpg', cropped_im)
+            except IOError: #Dersom mappen ikke fins
+                os.mkdir(path + dirname + '/') #Lag mappen
 
             i = i + 1
 
