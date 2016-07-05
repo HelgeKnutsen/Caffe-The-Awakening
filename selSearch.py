@@ -4,16 +4,23 @@ from scipy import misc
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import time
-from math import atan, pow
+from math import atan
 
 #Path: folder that contains the images you want to use
 #dirname: folder inside the Path folder that you want to save the new images in
 def sel_search(path, dirname, height):
 
-    sideLength = int(2208 * atan(1.0/height))
+    alphaG = 1737
+    alphaA = 1.246
+    alphaB = 1.321
+    alphaC = 0.732
 
-    bigArea = pow(1.0859 * sideLength, 2)
-    smallArea = pow(0.5730 * sideLength, 2)
+    g = alphaG * atan(1.0/height)
+
+    sideLength = int(alphaA * g)
+
+    bigArea = alphaB * g
+    smallArea = alphaC * g
 
     plt.ion()
 
@@ -30,7 +37,9 @@ def sel_search(path, dirname, height):
 
         imLowQ = misc.imresize(imHQ, resize, 'cubic')
 
-        img_lbl, regions = selective_search(imLowQ, scale=200, sigma=0.9, min_size=200)
+        img_lbl, regions = selective_search(imLowQ, scale=700, sigma=0.8, min_size=800)
+
+        #img_lbl, regions = selective_search(imLowQ, scale=200, sigma=0.8, min_size=200)
 
         #img_lbl, regions = selective_search(imLowQ, scale = 50, sigma = 0.7, min_size = 50)
 
@@ -51,9 +60,9 @@ def sel_search(path, dirname, height):
                 #print 'Distorted'
                 continue
 
-            # excluding regions smaller than 2000 pixels
-            if w * h < smallArea or w * h > bigArea:
-            #if w * h < 100:
+            # excluding regions smaller than smallArea pixels and bigger than bigArea pixels
+            #if w * h < smallArea or w * h > bigArea:
+            if w * h < 100:
                 # print 'Too small'
                 continue
 
@@ -62,20 +71,7 @@ def sel_search(path, dirname, height):
             candidates.add(newRect)
 
 
-        # plt.close('all')
-        # fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(40, 40))
-        # ax.imshow(imHQ)
-        # for x, y, w, h in candidates:
-        #    print x, y, w, h
-        #    rect = mpatches.Rectangle(
-        #        (x, y), w, h, fill=False, edgecolor='red', linewidth=1)
-        #    ax.add_patch(rect)
-        # plt.pause(0.00000001)
-        # plt.imshow(imHQ, interpolation='nearest')
-        # plt.draw()
-        # plt.show()
-        #
-        # plt.pause(0.2)
+
 
         candidates2 = set()
 
@@ -104,7 +100,20 @@ def sel_search(path, dirname, height):
 
             candidates2.add(squareRect)
 
+        plt.close('all')
+        fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(40, 40))
+        ax.imshow(imHQ)
+        for x, y, w, h in candidates2:
+           print x, y, w, h
+           rect = mpatches.Rectangle(
+               (x, y), w, h, fill=False, edgecolor='red', linewidth=1)
+           ax.add_patch(rect)
+        plt.pause(0.00000001)
+        plt.imshow(imHQ, interpolation='nearest')
+        plt.draw()
+        plt.show()
 
+        plt.pause(0.2)
 
         i = 1
         for elem in candidates2:
