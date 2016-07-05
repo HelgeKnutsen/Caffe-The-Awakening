@@ -9,8 +9,23 @@ from caffe import layers as L
 from caffe import params as P
 from caffe.proto import caffe_pb2
 
+
+# When running the script make sure to set the correct caffe_root.
+#
+# If necessary, change the label_path to the correct path with the label file.
+#
+# In order to keep working on the weights from previous runs, set savedWeights to the given folder.
+# Then set reset = False in loadWeights function call.
+#
+# If this is the first time running the script and there are no weights saved from previous runs, set reset = True and load the weights from reference weights.
+# If necessary, change the reference weights path.
+#
+# Choose the number of iterations niter appropriately.
+#
+# In order to save the progress of the trained weights, set tmp_save = False in the run_solvers function call.
+
 weight_param = dict(lr_mult=1, decay_mult=1)
-bias_param   = dict(lr_mult=2, decay_mult=0)
+bias_param = dict(lr_mult=2, decay_mult=0)
 learned_param = [weight_param, bias_param]
 
 frozen_param = [dict(lr_mult=0)] * 2
@@ -90,7 +105,7 @@ def caffenet(data, label=None, train=True, num_classes=1000,
 def style_net(train=True, learn_all=False, subset=None): # Choose learn_all = True to train all layers, learn_all = False to only tune last layer
     if subset is None:
         subset = 'train' if train else 'test'
-    source = caffe_root + 'data/flickr_style/%s.txt' % subset # text-file with the image-paths (and label numbers)
+    source = caffe_root + 'myData/%s.txt' % subset # text-file with the image-paths (and label numbers)
     transform_param = dict(mirror=train, crop_size=227,
                            mean_file=caffe_root + 'data/ilsvrc12/imagenet_mean.binaryproto')
     style_data, style_label = L.ImageData(transform_param=transform_param, source=source,
@@ -116,7 +131,7 @@ def disp_preds(net, image, labels, k=5, name='ImageNet'):
 # Solver functions:
 # --------------------------------------
 
-def solver(train_net_path, test_net_path=None, base_lr=0.001):
+def solver(train_net_path, test_net_path=None, base_lr=0.0001):
     s = caffe_pb2.SolverParameter()
 
     # Specify locations of the train and (maybe) test networks.
@@ -227,18 +242,21 @@ def loadWeights(reset = True):
     else: # Load previously trained weights
         return caffe_root + savedWeights + 'weights.pretrained.caffemodel'
 
-# Initialize:
 
+# Initialize:
 # --------------------------------------
+
+#caffe.set_device(0)
+caffe.set_mode_cpu()
 
 caffe_root = '/home/helge/caffe/'
 
 sys.path.insert(0, caffe_root + 'python')
 
-label_path = 'examples/finetune_flickr_style/style_names.txt' # file with labels
+label_path = 'myData/test_names.txt' # file with labels
 
 savedWeights = 'savedWeights/' # Make sure to create a folder in caffe_root where weights can be saved
-weights = loadWeights(reset = False) # Set reset = True to import weights from pretrained net with different classes,
+weights = loadWeights(reset = True) # Set reset = True to import weights from pretrained net with different classes,
                                      # set reset = False to keep training the saved weights with current classes
 assert os.path.exists(weights)
 print weights
@@ -250,7 +268,7 @@ print '\nLoaded style labels:\n', ', '.join(style_labels)
 
 niter = 1000 # number of iterations
 
-style_solver_filename = solver(style_net(train=True, learn_all = True)) # create tmp-file, return filename,
+style_solver_filename = solver(style_net(train=True, learn_all = False)) # create tmp-file, return filename,
 # add argument under style_net learn_all = True to train all layers, e.g. style_net(train = True, learn_all = True)
 style_solver = caffe.get_solver(style_solver_filename) # get solver
 style_solver.net.copy_from(weights) # Import weights in solver
@@ -266,3 +284,29 @@ del style_solver, solvers # delete to save memory
 style_weights = weights['pretrained']
 test_net, accuracy = eval_style_net(style_weights)
 print 'Accuracy, trained from ImageNet initialization: %3.1f%%' % (100*accuracy, )
+
+#########################################################################
+# Helper function for deprocessing preprocessed images, e.g., for display.
+def deprocess_net_image(image):
+    image = image.copy()              # don't modify destructively
+    image = image[::-1]               # BGR -> RGB
+    image = image.transpose(1, 2, 0)  # CHW -> HWC
+    image += [123, 117, 104]          # (approximately) undo mean subtraction
+
+    # clamp values in [0, 255]
+    image[image < 0], image[image > 255] = 0, 255
+
+    # round and cast from float32 to uint8
+    image = np.round(image)
+    image = np.require(image, dtype=np.uint8)
+
+    return image
+
+for batch_index in xrange(2):
+    image = test_net.blobs['data'].data[batch_index]
+    #Show image
+    img = deprocess_net_image(image)
+    img = Image.fromarray(np.asarray(img, dtype=np.uint8), 'RGB')
+    img.show()
+    #plt.imshow(deprocess_net_image(image))
+    print 'actual label =', style_labels[int(test_net.blobs['label'].data[batch_index])]
