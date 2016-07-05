@@ -15,6 +15,9 @@ def sel_search(path, dirname, height):
     alphaB = 1.321
     alphaC = 0.732
 
+    screenHeight = 1080
+    screenWidth = 1920
+
     g = alphaG * atan(1.0/height)
 
     sideLength = int(alphaA * g)
@@ -62,7 +65,7 @@ def sel_search(path, dirname, height):
 
             # excluding regions smaller than smallArea pixels and bigger than bigArea pixels
             #if w * h < smallArea or w * h > bigArea:
-            if w * h < 100:
+            if w * h < 5000 or w * h > 0.9 * screenWidth * screenHeight:
                 # print 'Too small'
                 continue
 
@@ -78,8 +81,7 @@ def sel_search(path, dirname, height):
         for c in candidates:
 
             size = sideLength
-            height = 1080
-            width = 1920
+
 
             x, y, w, h = c
 
@@ -88,9 +90,9 @@ def sel_search(path, dirname, height):
             center = (x + w / 2.0, y + h / 2.0)
 
             leftEdge = max(0, int(center[0] - size/2.0))
-            rightEdge = min(width, int(center[0] + size/2.0))
+            rightEdge = min(screenWidth, int(center[0] + size/2.0))
             topEdge = max(0, int(center[1] - size/2.0))
-            bottomEdge = min(height, int(center[1] + size/2.0))
+            bottomEdge = min(screenHeight, int(center[1] + size/2.0))
 
             cropped = (leftEdge, rightEdge, topEdge, bottomEdge)
             #print 'cropped:', cropped
