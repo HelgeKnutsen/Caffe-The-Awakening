@@ -10,3 +10,5 @@ if baneInn[-1] != "/": #Sjekker om banen slutter med skråstrek
     baneInn += "/"
 
 sel_search(baneInn, resultater, 10)
+
+#this comment
