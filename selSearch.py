@@ -30,7 +30,7 @@ def sel_search(path, dirname, height):
     plt.ion()
 
     listing = os.listdir(path)
-    listing.sort()
+    #listing.sort()
 
     #file = listing[0]
     for file in listing:
@@ -45,9 +45,13 @@ def sel_search(path, dirname, height):
 
         resize = 0.4
 
+        faktor = g*resize/70
+        faktor = 1
+        print(faktor)
+
         imLowQ = misc.imresize(imHQ, resize, 'cubic')
 
-        img_lbl, regions = selective_search(imLowQ, scale=700, sigma=0.8, min_size=800)
+        img_lbl, regions = selective_search(imLowQ, scale=3**5.1, sigma=0.8, min_size=int(3**5.1))
 
         #img_lbl, regions = selective_search(imLowQ, scale=200, sigma=0.8, min_size=200)
 
@@ -72,12 +76,12 @@ def sel_search(path, dirname, height):
 
             # excluding regions smaller than smallArea pixels and bigger than bigArea pixels
             #if w * h < smallArea or w * h > bigArea:
-            if w * h < 5000 or w * h > 0.9 * screenWidth * screenHeight:
+            if w * h > 0.9 * screenWidth * screenHeight:
                 # print 'Too small'
-                continue
+               continue
 
             # Ignorer kandidater som er for nærme en annen kandidat
-            minsteavstand = 0.1*sideLength
+            minsteavstand = 0.2*sideLength
             sentrum = (x + w/2.0, y + h/2.0)
             forNaerme = False
             for annenSentrum in sentre:
@@ -129,7 +133,7 @@ def sel_search(path, dirname, height):
         plt.close('all')
         fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(40, 40))
         ax.imshow(imHQ)
-        for x, y, w, h in candidates2:
+        for x, y, w, h in candidates:
            print x, y, w, h
            rect = mpatches.Rectangle(
                (x, y), w, h, fill=False, edgecolor='red', linewidth=1)
