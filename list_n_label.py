@@ -15,7 +15,7 @@ def save_n_label(path, savefolder, label, ratio):
     for i in xrange(n-num_test):
         train.write(path + '/' + onlyfiles[i] + ' ' + label + '\n')
     for j in xrange(num_test):
-        test.write(path + '/' + onlyfiles[i] + ' ' + label + '\n')
+        test.write(path + '/' + onlyfiles[j] + ' ' + label + '\n')
     #for i in xrange(n):  # iterate over file names
         #if (random.randint(0,ratio) < ratio or j >= num_test) and i >= num_test:
             #train.write(path + '/' + onlyfiles[i] + ' ' + label + '\n')
