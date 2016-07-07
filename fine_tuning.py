@@ -8,6 +8,8 @@ import os
 from caffe import layers as L
 from caffe import params as P
 from caffe.proto import caffe_pb2
+import time
+
 
 
 # When running the script make sure to set the correct caffe_root.
@@ -30,7 +32,7 @@ learned_param = [weight_param, bias_param]
 
 frozen_param = [dict(lr_mult=0)] * 2
 
-NUM_STYLE_LABELS = 8
+NUM_STYLE_LABELS = 2
 
 # Functions that initialize the caffenet:
 # --------------------------------------
@@ -105,14 +107,14 @@ def caffenet(data, label=None, train=True, num_classes=1000,
 def style_net(train=True, learn_all=False, subset=None): # Choose learn_all = True to train all layers, learn_all = False to only tune last layer
     if subset is None:
         subset = 'train' if train else 'test'
-    source = caffe_root + 'myData/%s.txt' % subset # text-file with the image-paths (and label numbers)
+    source = caffe_root + 'myData/2016-06-29 10m/%s.txt' % subset # text-file with the image-paths (and label numbers)
     transform_param = dict(mirror=train, crop_size=227,
                            mean_file=caffe_root + 'data/ilsvrc12/imagenet_mean.binaryproto')
     style_data, style_label = L.ImageData(transform_param=transform_param, source=source,
                                           batch_size=50, new_height=256, new_width=256, ntop=2)
     return caffenet(data=style_data, label=style_label, train=train,
                     num_classes=NUM_STYLE_LABELS,
-                    classifier_name='fc8_flickr',
+                    classifier_name='fc8_tx1',
                     learn_all=learn_all)
 
 # Display functions:
@@ -199,7 +201,7 @@ def run_solvers(niter, solvers, disp_interval=10, tmp_save = True):
             loss[name][it], acc[name][it] = (s.net.blobs[b].data.copy()
                                              for b in blobs)
         if it % disp_interval == 0 or it + 1 == niter:
-            loss_disp = '; '.join('%s: loss=%.3f, acc=%2d%%' %
+            loss_disp = '; '.join('%s: loss=%.3f, acc=%2.5f%%' %
                                   (n, loss[n][it], np.round(100*acc[n][it]))
                                   for n, _ in solvers)
             print '%3d) %s' % (it, loss_disp)
@@ -255,8 +257,8 @@ sys.path.insert(0, caffe_root + 'python')
 
 label_path = 'myData/test_names.txt' # file with labels
 
-savedWeights = 'savedWeights/' # Make sure to create a folder in caffe_root where weights can be saved
-weights = loadWeights(reset = True) # Set reset = True to import weights from pretrained net with different classes,
+savedWeights = 'savedWeights/2016-06-29 10m, weights/' # Make sure to create a folder in caffe_root where weights can be saved
+weights = loadWeights(reset = False) # Set reset = True to import weights from pretrained net with different classes,
                                      # set reset = False to keep training the saved weights with current classes
 assert os.path.exists(weights)
 print weights
@@ -266,7 +268,7 @@ style_labels = loadLables(label_path)
 
 print '\nLoaded style labels:\n', ', '.join(style_labels)
 
-niter = 1000 # number of iterations
+niter = 100 # number of iterations
 
 style_solver_filename = solver(style_net(train=True, learn_all = False)) # create tmp-file, return filename,
 # add argument under style_net learn_all = True to train all layers, e.g. style_net(train = True, learn_all = True)
@@ -282,7 +284,7 @@ print 'Done.'
 del style_solver, solvers # delete to save memory
 
 style_weights = weights['pretrained']
-test_net, accuracy = eval_style_net(style_weights)
+test_net, accuracy = eval_style_net(style_weights, test_iters = 50)
 print 'Accuracy, trained from ImageNet initialization: %3.1f%%' % (100*accuracy, )
 
 #########################################################################
@@ -302,11 +304,25 @@ def deprocess_net_image(image):
 
     return image
 
-for batch_index in xrange(2):
+n = 50
+avg_time = 0 # average searching time
+for batch_index in xrange(n):
+    tic = time.time()
     image = test_net.blobs['data'].data[batch_index]
     #Show image
     img = deprocess_net_image(image)
     img = Image.fromarray(np.asarray(img, dtype=np.uint8), 'RGB')
     img.show()
-    #plt.imshow(deprocess_net_image(image))
+    plt.imshow(deprocess_net_image(image))
     print 'actual label =', style_labels[int(test_net.blobs['label'].data[batch_index])]
+    disp_preds(test_net, image, style_labels, k=2)
+    toc = time.time()
+    print 'Searching time = ', toc-tic ,'sec'
+    print '\n'
+    plt.pause(2)
+    plt.close('all')
+    avg_time += toc - tic
+
+avg_time /= n
+
+print 'The average searching time was ', avg_time, 'sec'
