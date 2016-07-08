@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import time
 import math
+import numpy
 
 #Path: folder that contains the images you want to use
 #dirname: folder inside the Path folder that you want to save the new images in
@@ -38,6 +39,14 @@ def sel_search(path, dirname, height):
     tilfeldig_rekkefoelge = True
     pause = 1
 
+    minimum_resize = 0.017068*height + 0.01193
+    print(minimum_resize)
+    resize = min(1, minimum_resize)
+    #resize = 0.183203125
+
+    scale = 430.2 * math.e ** (
+    0.02050 * g * resize)  # Funksjon funnet ved regresjon etter forsøk med ulike resize-verdier med 5 m-bilder
+
     listing = os.listdir(path)
     if not tilfeldig_rekkefoelge:
         listing.sort()
@@ -45,23 +54,17 @@ def sel_search(path, dirname, height):
     #file = listing[0]
 
     gammel_tid = time.time()
+    tider = []
 
     for file in listing:
 
-        print file
+        #print file
 
         try:
             imHQ = misc.imread(path + file)
         except IOError: #Dersom filen er en mappe
             print("Fant mappe: " + file)
             continue
-
-        resize = 0.353125
-
-        #print(g)
-
-        scale = 430.2 * math.e**(0.02050*g*resize) # Funksjon funnet ved regresjon etter forsøk med ulike resize-verdier med 5 m-bilder
-        #print(scale)
 
         imLowQ = misc.imresize(imHQ, resize, 'cubic')
 
@@ -172,8 +175,16 @@ def sel_search(path, dirname, height):
             plt.show()
 
         ny_tid = time.time()
-        print(ny_tid - gammel_tid - pause)
+        difftid = ny_tid - gammel_tid - pause
         gammel_tid = ny_tid
+        tider.append(difftid)
+
+        if len(tider) > 1:
+            std = numpy.std(tider)
+            ny_std = std/len(tider)**0.5
+            mean = numpy.mean(tider)
+            log = math.log10(2*ny_std)
+            print("Siste tid [s]: {0},\t Gjennomsnittlig tid så langt: {1}".format(round(difftid,6), round(mean, - int(math.floor(log)))))
 
         plt.pause(pause)
 
