@@ -20,12 +20,11 @@ def save_n_label(path, savefolder, label, ratio, rand = False):
             else:
                 test.write(path + '/' + onlyfiles[i] + ' ' + label + '\n')
                 j += 1
-        print j
     else:
         for i in xrange(n - num_test):
             train.write(path + '/' + onlyfiles[i] + ' ' + label + '\n')
         for j in xrange(num_test):
-            test.write(path + '/' + onlyfiles[j] + ' ' + label + '\n')
+            test.write(path + '/' + onlyfiles[j+n-num_test] + ' ' + label + '\n')
 
     train.close()  # close train-file
     test.close() # close test-file
@@ -34,13 +33,17 @@ def save_n_label(path, savefolder, label, ratio, rand = False):
 
 
 caffe_root = '/home/helge/caffe/' # caffe_root
-path = caffe_root + 'data/test 2016.06.29/10m, cropped/2016-06-29 Mennesker 10m' # folder with image files
-savefolder = caffe_root + 'myData/' # folder where image names and labels are saved
+ratio = 5 # ratio of images saved in train-file vs test-file i.e. ratio = i means 1 of i images are saved in test-file
 
-ratio = 6 # ratio of images saved in train-file vs test-file i.e. ratio = i means 1 of i images are saved in test-file
+path = caffe_root + 'data/test 2016.06.29/20m/Mennesker' # folder with image files
+savefolder = caffe_root + 'myData/2016-06-29 20m/' # folder where image names and labels are saved
+
 # Note the following label system is applied
 # label = '0' for person
 # label = '1' for background
 label = '0'
 print save_n_label(path, savefolder, label, ratio)
 
+path = caffe_root + 'data/test 2016.06.29/20m/Bakgrunn' # folder with image files
+label = '1'
+print save_n_label(path, savefolder, label, ratio)
