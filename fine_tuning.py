@@ -106,7 +106,7 @@ def caffenet(data, label=None, train=True, num_classes=1000,
         f.write(str(n.to_proto()))
         return f.name
     # In order to save permanently the prototxt, uncomment the following four lines below and comment the corresponding three lines above.
-    #subset = 'train' if train else test
+    #subset = 'train' if train else 'test'
     #with open(caffe_root+'myData/net%s.prototxt'% (subset), 'w') as f:
         #f.write(str(n.to_proto()))
         #return f.name
