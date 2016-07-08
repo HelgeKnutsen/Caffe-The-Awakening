@@ -29,21 +29,24 @@ def sel_search(path, dirname, height):
 
     plt.ion()
 
+    # Filtere
+    filtrer_avlange = True
+    filtrer_store = True
+    filtrer_naerme = True
+    minstoerrelse = True
+    vis_bilde = True
+    tilfeldig_rekkefoelge = True
+    pause = 1
+
     listing = os.listdir(path)
-    #listing.sort()
+    if not tilfeldig_rekkefoelge:
+        listing.sort()
 
     #file = listing[0]
 
     gammel_tid = time.time()
 
     for file in listing:
-
-        # Filtere
-        filtrer_avlange = True
-        filtrer_store = True
-        filtrer_naerme = True
-        minstoerrelse = True
-        vis_bilde = True
 
         print file
 
@@ -53,12 +56,12 @@ def sel_search(path, dirname, height):
             print("Fant mappe: " + file)
             continue
 
-        resize = 0.4
+        resize = 0.353125
 
-        print(g)
+        #print(g)
 
         scale = 430.2 * math.e**(0.02050*g*resize) # Funksjon funnet ved regresjon etter forsøk med ulike resize-verdier med 5 m-bilder
-        print(scale)
+        #print(scale)
 
         imLowQ = misc.imresize(imHQ, resize, 'cubic')
 
@@ -105,7 +108,7 @@ def sel_search(path, dirname, height):
                     avstand = (deltaX**2 + deltaY**2)**0.5
                     if avstand < minsteavstand:
                         forNaerme = True
-                        print("For nærme en annen kandidat.")
+                        #print("For nærme en annen kandidat.")
                         break
                 if forNaerme:
                     continue
@@ -128,7 +131,7 @@ def sel_search(path, dirname, height):
 
             x, y, w, h = c
 
-            print x, y, w, h
+            #print x, y, w, h
 
             center = (x + w / 2.0, y + h / 2.0)
 
@@ -159,7 +162,7 @@ def sel_search(path, dirname, height):
             fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(40, 40))
             ax.imshow(imHQ)
             for x, y, w, h in candidates2:
-               print x, y, w, h
+               #print x, y, w, h
                rect = mpatches.Rectangle(
                    (x, y), w, h, fill=False, edgecolor='red', linewidth=1)
                ax.add_patch(rect)
@@ -169,10 +172,10 @@ def sel_search(path, dirname, height):
             plt.show()
 
         ny_tid = time.time()
-        print(ny_tid - gammel_tid)
+        print(ny_tid - gammel_tid - pause)
         gammel_tid = ny_tid
 
-        #plt.pause(0.2)
+        plt.pause(pause)
 
         i = 1
         for elem in candidates2:
@@ -193,4 +196,4 @@ def sel_search(path, dirname, height):
 
             i = i + 1
 
-            print 'image saved!'
+            #print 'image saved!'
