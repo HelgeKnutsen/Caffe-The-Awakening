@@ -11,9 +11,11 @@ from caffe.proto import caffe_pb2
 import time
 
 
-
-# When running the script make sure to set the correct caffe_root.
+# Read before running script:
+# --------------------------------------
+# When running the script make sure to set the correct caffe_root. All the files used in the script should be located in the caffe_root-folder.
 #
+# Make sure to set the correct source_path where the list of traning and test data can be found. These files should be named train.txt and test.txt, respectively.
 # If necessary, change the label_path to the correct path with the label file.
 #
 # In order to keep working on the weights from previous runs, set savedWeights to the given folder.
@@ -25,6 +27,7 @@ import time
 # Choose the number of iterations niter appropriately.
 #
 # In order to save the progress of the trained weights, set tmp_save = False in the run_solvers function call.
+# --------------------------------------
 
 weight_param = dict(lr_mult=1, decay_mult=1)
 bias_param = dict(lr_mult=2, decay_mult=0)
@@ -102,12 +105,17 @@ def caffenet(data, label=None, train=True, num_classes=1000,
     with tempfile.NamedTemporaryFile(delete=False) as f:
         f.write(str(n.to_proto()))
         return f.name
+    # In order to save permanently the prototxt, uncomment the following four lines below and comment the corresponding three lines above.
+    #subset = 'train' if train else test
+    #with open(caffe_root+'myData/net%s.prototxt'% (subset), 'w') as f:
+        #f.write(str(n.to_proto()))
+        #return f.name
 
 
-def style_net(train=True, learn_all=False, subset=None): # Choose learn_all = True to train all layers, learn_all = False to only tune last layer
+def style_net(source_path, train=True, learn_all=False, subset=None): # Choose learn_all = True to train all layers, learn_all = False to only tune last layer
     if subset is None:
         subset = 'train' if train else 'test'
-    source = caffe_root + 'myData/2016-06-29 10m/%s.txt' % subset # text-file with the image-paths (and label numbers)
+    source = caffe_root + source_path + '%s.txt' % subset # text-file with the image-paths (and label numbers)
     transform_param = dict(mirror=train, crop_size=227,
                            mean_file=caffe_root + 'data/ilsvrc12/imagenet_mean.binaryproto')
     style_data, style_label = L.ImageData(transform_param=transform_param, source=source,
@@ -218,8 +226,8 @@ def run_solvers(niter, solvers, disp_interval=10, tmp_save = True):
     return loss, acc, weights
 
 
-def eval_style_net(weights, test_iters=10):
-    test_net = caffe.Net(style_net(train=False), weights, caffe.TEST)
+def eval_style_net(source_path, weights, test_iters=10):
+    test_net = caffe.Net(style_net(source_path, train=False), weights, caffe.TEST)
     accuracy = 0
     for it in xrange(test_iters):
         accuracy += test_net.forward()['acc']
@@ -253,11 +261,12 @@ caffe.set_mode_cpu()
 
 caffe_root = '/home/helge/caffe/'
 
-sys.path.insert(0, caffe_root + 'python')
+source_path = 'myData/2016-06-29 20m/' # path to text-file with the image-paths (and label numbers)
+#sys.path.insert(0, caffe_root + 'python')
 
 label_path = 'myData/test_names.txt' # file with labels
 
-savedWeights = 'savedWeights/2016-06-29 10m, weights/' # Make sure to create a folder in caffe_root where weights can be saved
+savedWeights = 'savedWeights/2016-06-29 20m, weights/' # Make sure to create a folder in caffe_root where weights can be saved
 weights = loadWeights(reset = False) # Set reset = True to import weights from pretrained net with different classes,
                                      # set reset = False to keep training the saved weights with current classes
 assert os.path.exists(weights)
@@ -266,11 +275,12 @@ print weights
 style_labels = loadLables(label_path)
 
 
+
 print '\nLoaded style labels:\n', ', '.join(style_labels)
 
-niter = 100 # number of iterations
+niter = 50 # number of iterations
 
-style_solver_filename = solver(style_net(train=True, learn_all = False)) # create tmp-file, return filename,
+style_solver_filename = solver(style_net(source_path, train=True, learn_all = False)) # create tmp-file, return filename,
 # add argument under style_net learn_all = True to train all layers, e.g. style_net(train = True, learn_all = True)
 style_solver = caffe.get_solver(style_solver_filename) # get solver
 style_solver.net.copy_from(weights) # Import weights in solver
@@ -284,7 +294,7 @@ print 'Done.'
 del style_solver, solvers # delete to save memory
 
 style_weights = weights['pretrained']
-test_net, accuracy = eval_style_net(style_weights, test_iters = 50)
+test_net, accuracy = eval_style_net(source_path, style_weights, test_iters = 5)
 print 'Accuracy, trained from ImageNet initialization: %3.1f%%' % (100*accuracy, )
 
 #########################################################################
@@ -304,7 +314,7 @@ def deprocess_net_image(image):
 
     return image
 
-n = 50
+n = 5
 avg_time = 0 # average searching time
 for batch_index in xrange(n):
     tic = time.time()
@@ -312,7 +322,7 @@ for batch_index in xrange(n):
     #Show image
     img = deprocess_net_image(image)
     img = Image.fromarray(np.asarray(img, dtype=np.uint8), 'RGB')
-    img.show()
+    #img.show()
     plt.imshow(deprocess_net_image(image))
     print 'actual label =', style_labels[int(test_net.blobs['label'].data[batch_index])]
     disp_preds(test_net, image, style_labels, k=2)
