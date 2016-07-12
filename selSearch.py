@@ -13,20 +13,14 @@ import numpy
 #dirname: folder inside the Path folder that you want to save the new images in
 def sel_search(path, dirname, height):
 
-    alphaG = 1737
-    alphaA = 1.246
-    alphaB = 1.321
-    alphaC = 0.732
+    alphaG = 1737 # Funnet ved å løse ligningen
+    alphaA = 1.246 # Faktoren som man ganger g med for å få bredden til kvadratet som dekker 90 % av personer (90. persentil)
+    g = alphaG * math.atan(1.0/height)
 
     screenHeight = 1080
     screenWidth = 1920
 
-    g = alphaG * math.atan(1.0/height)
-
     sideLength = int(alphaA * g)
-
-    bigArea = (alphaB * g)**2
-    smallArea = (alphaC * g)**2
 
     plt.ion()
 
@@ -35,8 +29,9 @@ def sel_search(path, dirname, height):
     filtrer_store = True
     filtrer_naerme = True
     minstoerrelse = True
-    vis_bilde = True
-    tilfeldig_rekkefoelge = True
+    vis_bilde = False
+    tilfeldig_rekkefoelge = False
+    lagre_utsnitt = False
     pause = 1
 
     minimum_resize = 0.017068*height + 0.01193
@@ -53,12 +48,12 @@ def sel_search(path, dirname, height):
 
     #file = listing[0]
 
-    gammel_tid = time.time()
     tider = []
+    gammel_tid = -1
+
+    i = 0
 
     for file in listing:
-
-        #print file
 
         try:
             imHQ = misc.imread(path + file)
@@ -175,36 +170,38 @@ def sel_search(path, dirname, height):
             plt.show()
 
         ny_tid = time.time()
-        difftid = ny_tid - gammel_tid - pause
+        if gammel_tid != -1:
+            difftid = ny_tid - gammel_tid - pause
+            tider.append(difftid)
         gammel_tid = ny_tid
-        tider.append(difftid)
-
-        if len(tider) > 1:
-            std = numpy.std(tider)
-            ny_std = std/len(tider)**0.5
-            mean = numpy.mean(tider)
-            log = math.log10(2*ny_std)
-            print("Siste tid [s]: {0},\t Gjennomsnittlig tid så langt: {1}".format(round(difftid,6), round(mean, - int(math.floor(log)))))
 
         plt.pause(pause)
 
-        i = 1
-        for elem in candidates2:
-            #print elem
+        if lagre_utsnitt:
+            i = 1
+            for elem in candidates2:
+                #print elem
 
-            cropped_im = imHQ[elem[1]: elem[1] + elem[3], elem[0]: elem[0] + elem[2]]
+                cropped_im = imHQ[elem[1]: elem[1] + elem[3], elem[0]: elem[0] + elem[2]]
 
 
-            file = file.replace('.jpg','')
+                file = file.replace('.jpg','')
 
-            #print file
+                #print file
 
-            try:
-                #print(imHQ)
-                misc.imsave(path + dirname + '/' + file + "_" + str(i) + '.jpg', cropped_im)
-            except IOError: #Dersom mappen ikke fins
-                os.mkdir(path + dirname + '/') #Lag mappen
+                try:
+                    #print(imHQ)
+                    misc.imsave(path + dirname + '/' + file + "_" + str(i) + '.jpg', cropped_im)
+                except IOError: #Dersom mappen ikke fins
+                    os.mkdir(path + dirname + '/') #Lag mappen
 
-            i = i + 1
+        i = i + 1
 
-            #print 'image saved!'
+        if i % 12 == 0:
+            std = numpy.std(tider)
+            ny_std = std / len(tider) ** 0.5
+            mean = numpy.mean(tider)
+            log = math.log10(2 * 2 * ny_std)
+            print("Siste tid [s]: {0},\t Gjennomsnittlig tid så langt: {1}".format(round(difftid, 6),
+                                                                                   round(mean, - int(math.floor(log)))))
+            print("Framgang: {0} %;\tGjenstående tid: {1} s.".format(i*100/len(listing), round(mean*(len(listing)-i))) )
